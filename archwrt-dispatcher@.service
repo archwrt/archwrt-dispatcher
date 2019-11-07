@@ -3,7 +3,7 @@ Description=Dispatcher for Archwrt
 Before=network-pre.target
 
 [Service]
-Type=oneshot
+Type=simple
 RemainAfterExit=yes
 ExecStart=/usr/bin/archwrt-dispatcher.sh up %i
 ExecStop=/usr/bin/archwrt-dispatcher.sh down
