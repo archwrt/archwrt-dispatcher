@@ -4,13 +4,13 @@ dispacher_dir=/etc/archwrt/dispatcher
 
 start_services() {
 	for s in "${services[@]}"; do
-		systemctl start "$s"
+        (systemctl start "$s" &) || true
 	done
 }
 
 stop_services() {
 	for s in "${services[@]}"; do
-		systemctl stop "$s"
+        systemctl stop "$s"
 	done
 }
 
@@ -44,7 +44,7 @@ up() {
 			-A PREROUTING -i $interface -j FULLCONENAT
 			-A POSTROUTING -o $interface -j FULLCONENAT
 			COMMIT
-			
+
 			*mangle
 			:PREROUTING ACCEPT [0:0]
 			:INPUT ACCEPT [0:0]

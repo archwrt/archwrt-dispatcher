@@ -1,6 +1,6 @@
 [Unit]
 Description=Dispatcher for Archwrt
-After=network.target
+Before=network-pre.target
 
 [Service]
 Type=oneshot

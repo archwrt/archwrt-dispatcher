@@ -11,20 +11,18 @@ with `wait-for-oneline.service` and `netctl`'s `ExecUpPost`.
 Just add the following to your netctl.profile: (assuming the WAN interface is `net0`)
 
 ```
-ExecUpPost="(nohup systemctl start archwrt-dispatcher@net0 &>/dev/null &) || true;"
+ExecUpPost="systemctl start archwrt-dispatcher@net0;"
 ExecDownPre="systemctl stop archwrt-dispatcher@net0;"
 ```
 
 __For PPPoE profiles, change `net0` to `pppX`(at most of time `ppp0` should work)__
 
 
-__Why `nohup`?__
+If we just call `systemctl start` in the `nectl`, Some services will wait until `network.target` reached, but `network.target` will never reach until `netctl` finishes. 
 
-Because `archwrt-dispatcher@.service` will wait for `network.target` and other managed services may also have `After=network.target`. 
+Then, it get stucked.
 
-If we just call `systemctl start` in the `nectl`, services will wait until `network.target` reached, but `network.target` will never reach until `netctl` finishes. Then we get stucked.
-
-The `(nohup ...) || true` is how we solve this problem in a dirty way.
+The `archwrt-dispatcher@.service` is created to solve the problem by creating a daemon which helps you to start services soon or later.
 
 ### Managing Services
 
