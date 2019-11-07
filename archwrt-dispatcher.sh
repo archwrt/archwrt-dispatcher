@@ -27,8 +27,11 @@ cf_redir() {
 		ipset -! add cloudflare "${net}" nomatch
 	done
 
-	iptables -t nat -I PREROUTING -p tcp -m set --match-set cloudflare dst -m comment --comment "Cloudflare IP" -j DNAT --to-destination "${cf_dest}"
-	iptables -t nat -I OUTPUT -p tcp -m set --match-set cloudflare dst -m comment --comment "Cloudflare IP" -j DNAT --to-destination "${cf_dest}"
+    iptables -t nat -N CLOUDFLARE
+    iptables -t nat -I PREROUTING -j CLOUDFLARE
+    iptables -t nat -I OUTPUT -j CLOUDFLARE
+
+	iptables -t nat -A CLOUDFLARE -p tcp -m set --match-set cloudflare dst -m comment --comment "Cloudflare IP" -j DNAT --to-destination "${cf_dest}"
 }
 
 up() {
