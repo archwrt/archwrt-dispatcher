@@ -1,10 +1,9 @@
 # archwrt-dispatcher
-Dispatcher for handling iptables and others by systemd service.
+Dispatcher for handling iptables nat forwarding and others by systemd service.
 
 ### This is a quick and dirty solution
 
-Dirty solution for setting iptables and managing annoying `After=network.target` services
-with `wait-for-oneline.service` and `netctl`'s `ExecUpPost`.
+Since `netctl` is a dirty and quick solution, this is quick and dirty.
 
 ### Tips for netctl.profile
 
@@ -14,15 +13,7 @@ Just add the following to your netctl.profile: (assuming the WAN interface is `n
 ExecUpPost="systemctl start archwrt-dispatcher@net0;"
 ExecDownPre="systemctl stop archwrt-dispatcher@net0;"
 ```
-
 __For PPPoE profiles, change `net0` to `pppX`(at most of time `ppp0` should work)__
-
-
-If we just call `systemctl start` in the `nectl`, Some services will wait until `network.target` reached, but `network.target` will never reach until `netctl` finishes. 
-
-Then, it get stucked.
-
-The `archwrt-dispatcher@.service` is created to solve the problem by creating a daemon which helps you to start services soon or later.
 
 ### Managing Services
 
