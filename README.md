@@ -13,7 +13,21 @@ Just add the following to your netctl.profile: (assuming the WAN interface is `n
 ExecUpPost="systemctl start archwrt-dispatcher@net0;"
 ExecDownPre="systemctl stop archwrt-dispatcher@net0;"
 ```
-__For PPPoE profiles, change `net0` to `pppX`(at most of time `ppp0` should work)__
+__For PPPoE profiles, create the following scripts: (Don't forget the execute permission)__
+
+`/etc/ppp/ip-up.d/10-archwrt-dispatcher.sh`
+
+``` bash
+#!/bin/bash
+systemctl start "archwrt-dispatcher@${IFNAME}.service"
+```
+
+`/etc/ppp/ip-down.d/10-archwrt-dispatcher.sh`
+
+``` bash
+#!/bin/bash
+systemctl stop "archwrt-dispatcher@${IFNAME}.service"
+```
 
 ### `use_fullconenat`
 Default is `true` (need iptables-fullconenat). If you want use `MASQUERADE` instead, set it `false` in `dispatcher.conf`
