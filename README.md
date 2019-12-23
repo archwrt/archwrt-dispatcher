@@ -15,6 +15,9 @@ ExecDownPre="systemctl stop archwrt-dispatcher@net0;"
 ```
 __For PPPoE profiles, change `net0` to `pppX`(at most of time `ppp0` should work)__
 
+### `use_fullconenat`
+Default is `true` (need iptables-fullconenat). If you want use `MASQUERADE` instead, set it `false` in `dispatcher.conf`
+
 ### Managing Services
 
 Set `services` array in the `/etc/archwrt/dispatcher/dispatcher.conf`

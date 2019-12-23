@@ -36,39 +36,71 @@ cf_redir() {
 
 up() {
 	interface=$1
-	#Nat
+	#NAT
 	if [[ "$interface" =~ "ppp" ]]; then
-		iptables-restore -w <<-EOF
-			*nat
-			:PREROUTING ACCEPT [0:0]
-			:INPUT ACCEPT [0:0]
-			:OUTPUT ACCEPT [0:0]
-			:POSTROUTING ACCEPT [0:0]
-			-A PREROUTING -i $interface -j FULLCONENAT
-			-A POSTROUTING -o $interface -j FULLCONENAT
-			COMMIT
+		if [ "${use_fullconenat}" = "true"  ]; then
+			iptables-restore -w <<-EOF
+				*nat
+				:PREROUTING ACCEPT [0:0]
+				:INPUT ACCEPT [0:0]
+				:OUTPUT ACCEPT [0:0]
+				:POSTROUTING ACCEPT [0:0]
+				-A PREROUTING -i $interface -j FULLCONENAT
+				-A POSTROUTING -o $interface -j FULLCONENAT
+				COMMIT
 
-			*mangle
-			:PREROUTING ACCEPT [0:0]
-			:INPUT ACCEPT [0:0]
-			:FORWARD ACCEPT [0:0]
-			:OUTPUT ACCEPT [0:0]
-			:POSTROUTING ACCEPT [0:0]
-			-A FORWARD -o $interface -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-			COMMIT
-		EOF
+				*mangle
+				:PREROUTING ACCEPT [0:0]
+				:INPUT ACCEPT [0:0]
+				:FORWARD ACCEPT [0:0]
+				:OUTPUT ACCEPT [0:0]
+				:POSTROUTING ACCEPT [0:0]
+				-A FORWARD -o $interface -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+				COMMIT
+			EOF
+		else
+			iptables-restore -w <<-EOF
+				*nat
+				:PREROUTING ACCEPT [0:0]
+				:INPUT ACCEPT [0:0]
+				:OUTPUT ACCEPT [0:0]
+				:POSTROUTING ACCEPT [0:0]
+				-A POSTROUTING -o $interface -j MASQUERADE
+				COMMIT
+
+				*mangle
+				:PREROUTING ACCEPT [0:0]
+				:INPUT ACCEPT [0:0]
+				:FORWARD ACCEPT [0:0]
+				:OUTPUT ACCEPT [0:0]
+				:POSTROUTING ACCEPT [0:0]
+				-A FORWARD -o $interface -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+				COMMIT
+			EOF
+		fi
 	else
-		iptables-restore -w <<-EOF
-			*nat
-			:PREROUTING ACCEPT [0:0]
-			:INPUT ACCEPT [0:0]
-			:OUTPUT ACCEPT [0:0]
-			:POSTROUTING ACCEPT [0:0]
-			-A POSTROUTING -o $interface -j FULLCONENAT
-			-A PREROUTING -i $interface -j FULLCONENAT
-			COMMIT
-		EOF
-
+		if [ "${use_fullconenat}" = "true"  ]; then
+			iptables-restore -w <<-EOF
+				*nat
+				:PREROUTING ACCEPT [0:0]
+				:INPUT ACCEPT [0:0]
+				:OUTPUT ACCEPT [0:0]
+				:POSTROUTING ACCEPT [0:0]
+				-A POSTROUTING -o $interface -j FULLCONENAT
+				-A PREROUTING -i $interface -j FULLCONENAT
+				COMMIT
+			EOF
+		else
+			iptables-restore -w <<-EOF
+				*nat
+				:PREROUTING ACCEPT [0:0]
+				:INPUT ACCEPT [0:0]
+				:OUTPUT ACCEPT [0:0]
+				:POSTROUTING ACCEPT [0:0]
+				-A POSTROUTING -o $interface -j MASQUERADE
+				COMMIT
+			EOF
+		fi
 	fi
 
 	# Filter Rules
