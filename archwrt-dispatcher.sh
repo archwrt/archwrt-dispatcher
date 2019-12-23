@@ -112,8 +112,8 @@ up() {
 }
 
 down() {
-	cat /usr/share/iptables/empty-{nat,mangle}.rules | iptables-restore -w
-	cat /usr/share/iptables/empty-{nat,mangle}.rules | ip6tables-restore -w
+	cat /usr/share/iptables/empty-{filter,nat,mangle}.rules | iptables-restore -w
+	cat /usr/share/iptables/empty-{filter,nat,mangle}.rules | ip6tables-restore -w
 	stop_services
 }
 
