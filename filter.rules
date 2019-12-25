@@ -2,12 +2,10 @@
 :INPUT DROP [0:0]
 :FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
-:PORT-SCANNING - [0:0]
 -A INPUT -i lo -j ACCEPT
 -A INPUT -i br0 -j ACCEPT
 -A INPUT -p udp -j ACCEPT
 -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
--A PORT-SCANNING -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK RST -m limit --limit 1/sec --limit-burst 2 -j RETURN
 -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 -A FORWARD -i br0 -o $interface -j ACCEPT
 COMMIT
