@@ -32,6 +32,7 @@ ln -sf /usr/share/archwrt/ppp.down-10-archwrt.sh /etc/ppp/ip-down.d/10-archwrt.s
 ```
 
 3. read from route table
+
 You can also use `archwrt-dispatcher.service` and we can get WAN interface from the route table.
 
 ### Interfaces
