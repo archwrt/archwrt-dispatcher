@@ -1,11 +1,14 @@
 # archwrt-dispatcher
 Dispatcher for handling iptables nat forwarding and others by systemd service.
 
-### This is a quick and dirty solution
+### Description
 
 Since `netctl` is a dirty and quick solution, this is quick and dirty.
 
-### Tips for netctl.profile
+### LAN interface
+Set `lan` in `/etc/archwrt/dispatcher/dispatcher.conf`, default is 'br0'
+
+### Using netctl.profile
 
 Just add the following to your netctl.profile: (assuming the WAN interface is `net0`)
 
@@ -41,7 +44,7 @@ systemctl stop "archwrt-dispatcher.service"
 
 ***
 
-__Tipically, the above use the default interface from `ip route`. If you want to assign the interface manually, use the following instead:__
+__Tipically, the above use the default interface from `ip route`. If you want to assign the interface "manually", use the following instead:__
 
 `/etc/ppp/ip-up.d/10-archwrt-dispatcher.sh`
 
@@ -78,3 +81,6 @@ e.g. To open tcp port 80, add this line to the end of the INPUT Chain:
 
 Just read the script and `/etc/archwrt/dispatcher/dispatcher.conf`
 If you don't want this, just set `cf_dest` to empty string or comment it.
+
+### TODO
+- [] IPv6 support (NAT for IPv6? Sounds like a fake requirement. Maybe add configs for dnsmasq for DHCPv6)
