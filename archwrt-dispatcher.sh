@@ -37,7 +37,10 @@ cf_redir() {
 up() {
 	case $1 in
 		default)
-			interface=$(route | grep default | awk '{print $8}' | head -1)
+			interface=$(ip route | \
+				grep default | \
+				grep -o 'dev.*' | \
+				awk '{print $2}')
             [ -z "$interface" ] && echo 'Read default interface from route failed!' 1>&2 && exit 1
 			;;
 		*)

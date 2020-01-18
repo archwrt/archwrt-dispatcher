@@ -16,7 +16,7 @@ ExecDownPre="systemctl stop archwrt-dispatcher.service;"
 
 ***
 
-__Tipically, the above use the default interface from your `route`. If you want to assign an interface manually, use the following instead: (assuming the WAN interface is `net0`)__
+__Tipically, the above use the default interface from `ip route`. If you want to assign an interface manually, use the following instead: (assuming the WAN interface is `net0`)__
 
 ```
 ExecUpPost="systemctl start archwrt-dispatcher@net0.service;"
@@ -41,7 +41,7 @@ systemctl stop "archwrt-dispatcher.service"
 
 ***
 
-__Tipically, the above use the default interface from your `route`. If you want to assign the interface manually, use the following instead:__
+__Tipically, the above use the default interface from `ip route`. If you want to assign the interface manually, use the following instead:__
 
 `/etc/ppp/ip-up.d/10-archwrt-dispatcher.sh`
 
