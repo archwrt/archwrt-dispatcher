@@ -35,7 +35,15 @@ cf_redir() {
 }
 
 up() {
-	interface=$1
+	case $1 in
+		default)
+			interface=$(route | grep default | awk '{print $8}' | head -1)
+            [ -z "$interface" ] && echo 'Read default interface from route failed!' 1>&2 && exit 1
+			;;
+		*)
+			interface=$1
+			;;
+	esac
 	#NAT
 	if [[ "$interface" =~ "ppp" ]]; then
 		if [ "${use_fullconenat}" = "true"  ]; then

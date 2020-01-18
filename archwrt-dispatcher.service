@@ -1,0 +1,10 @@
+[Unit]
+Description=Dispatcher for Archwrt
+Before=network-pre.target
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+ExecStart=/usr/bin/archwrt-dispatcher.sh up default
+ExecStop=/usr/bin/archwrt-dispatcher.sh down
+ExecReload=/usr/bin/archwrt-dispatcher.sh restart default
