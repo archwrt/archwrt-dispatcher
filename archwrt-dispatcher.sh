@@ -121,8 +121,12 @@ up() {
 	fi
 
 	# Filter Rules
-	sed "s,\$wan,$wan,g;s,\$lan,$lan,g" "$dispacher_dir/filter.rules" \
+	# iptables
+	sed "s/\$wan/$wan/g;s/\$lan/$lan/g;s/\$allowed_ports/$allowed_ports/g" "$dispacher_dir/filter.rules" \
 		| iptables-restore -w || { echo Error: Loading filter.rules failed; down; exit 1; }
+	#ip6tables
+	sed "s/\$wan/$wan/g;s/\$lan/$lan/g;s/\$allowed_ports/$allowed_ports/g" "$dispacher_dir/filter6.rules" \
+		| ip6tables-restore -w || { echo Error: Loading filter.rules failed; down; exit 1; }
 
 	if [ -n "$cf_dest" ]; then
 		cf_redir || { echo "Error: Cloudflare redirect failed" 1>&2; down; exit 1; }
