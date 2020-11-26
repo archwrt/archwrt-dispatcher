@@ -6,6 +6,11 @@
 -A INPUT -i $lan -j ACCEPT
 -A INPUT -p udp -j ACCEPT
 -A INPUT -p icmpv6 --icmpv6-type echo-request -j ACCEPT
+-A INPUT -p icmpv6 --icmpv6-type echo-reply -j ACCEPT
+-A INPUT -p icmpv6 --icmpv6-type router-advertisement -j ACCEPT
+-A INPUT -p icmpv6 --icmpv6-type neighbor-solicitation -j ACCEPT
+-A INPUT -p icmpv6 --icmpv6-type neighbor-advertisement -j ACCEPT
+-A INPUT -p icmpv6 --icmpv6-type redirect -j ACCEPT
 -A INPUT -p tcp --match multiport --dports $allowed_ports -j ACCEPT
 -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 COMMIT
