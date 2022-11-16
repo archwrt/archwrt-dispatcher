@@ -133,6 +133,10 @@ up() {
 	fi
 
 	start_services
+
+  if [ -n "$dns_hijack" ]; then
+    iptables -w -t nat -I PREROUTING -s $lan_net -p udp -m udp --dport 53 -m comment --comment dns_redir -j DNAT --to-destination $dns_hijack
+  fi
 }
 
 while [ $# -gt 0 ]; do
