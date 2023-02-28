@@ -68,7 +68,8 @@ up() {
 				:OUTPUT ACCEPT [0:0]
 				:POSTROUTING ACCEPT [0:0]
 				-A PREROUTING -i $wan -j FULLCONENAT
-				-A POSTROUTING -s $lan_net -o $wan -j FULLCONENAT
+        -A POSTROUTING -d $lan_net -o $lan -j FULLCONENAT
+        -A POSTROUTING -s $lan_net -o $wan -j FULLCONENAT
 				COMMIT
 
 				*mangle
@@ -87,6 +88,7 @@ up() {
 				:INPUT ACCEPT [0:0]
 				:OUTPUT ACCEPT [0:0]
 				:POSTROUTING ACCEPT [0:0]
+        -A POSTROUTING -d $lan_net -o $lan -j MASQUERADE
 				-A POSTROUTING -s $lan_net -o $wan -j MASQUERADE
 				COMMIT
 
@@ -108,6 +110,7 @@ up() {
 				:INPUT ACCEPT [0:0]
 				:OUTPUT ACCEPT [0:0]
 				:POSTROUTING ACCEPT [0:0]
+        -A POSTROUTING -d $lan_net -o $lan -j FULLCONENAT
 				-A POSTROUTING -s $lan_net -o $wan -j FULLCONENAT
 				-A PREROUTING -i $wan -j FULLCONENAT
 				COMMIT
@@ -119,6 +122,7 @@ up() {
 				:INPUT ACCEPT [0:0]
 				:OUTPUT ACCEPT [0:0]
 				:POSTROUTING ACCEPT [0:0]
+        -A POSTROUTING -d $lan_net -o $lan -j MASQUERADE
 				-A POSTROUTING -s $lan_net -o $wan -j MASQUERADE
 				COMMIT
 			EOF
