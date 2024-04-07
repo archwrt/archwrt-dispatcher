@@ -37,12 +37,12 @@ cf_redir() {
     iptables -t nat -I PREROUTING -j CLOUDFLARE
     iptables -t nat -I OUTPUT -j CLOUDFLARE
 
-	iptables -t nat -A CLOUDFLARE -p tcp -m set --match-set cloudflare dst -m comment --comment "Cloudflare IP" -j DNAT --to-destination "${cf_dest}"
+    iptables -t nat -A CLOUDFLARE -p tcp -m set --match-set cloudflare dst -m comment --comment "Cloudflare IP" -j DNAT --to-destination "${cf_dest}"
 }
 
 down() {
-    stop_services
-	cat /usr/share/iptables/empty-{filter,nat,mangle}.rules | iptables-restore -w
+  stop_services
+  cat /usr/share/iptables/empty-{filter,nat,mangle}.rules | iptables-restore -w
 }
 
 up() {
@@ -58,76 +58,23 @@ up() {
 			wan=$1
 			;;
 	esac
-	#NAT
-	if [[ "$wan" =~ "ppp" ]]; then
-		if [ "${use_fullconenat}" = "true"  ]; then
-			iptables-restore -w <<-EOF || { echo 'Setting up NAT for $wan failed'; down; exit 1; }
-				*nat
-				:PREROUTING ACCEPT [0:0]
-				:INPUT ACCEPT [0:0]
-				:OUTPUT ACCEPT [0:0]
-				:POSTROUTING ACCEPT [0:0]
-				-A PREROUTING -i $wan -j FULLCONENAT
-        -A POSTROUTING -d $lan_net -o $lan -j FULLCONENAT
-        -A POSTROUTING -s $lan_net -o $wan -j FULLCONENAT
-				COMMIT
 
-				*mangle
-				:PREROUTING ACCEPT [0:0]
-				:INPUT ACCEPT [0:0]
-				:FORWARD ACCEPT [0:0]
-				:OUTPUT ACCEPT [0:0]
-				:POSTROUTING ACCEPT [0:0]
-				-A FORWARD -o $wan -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-				COMMIT
-			EOF
-		else
-			iptables-restore -w <<-EOF || { echo 'Setting up NAT for $wan failed'; down; exit 1; }
-				*nat
-				:PREROUTING ACCEPT [0:0]
-				:INPUT ACCEPT [0:0]
-				:OUTPUT ACCEPT [0:0]
-				:POSTROUTING ACCEPT [0:0]
-        -A POSTROUTING -d $lan_net -o $lan -j MASQUERADE
-				-A POSTROUTING -s $lan_net -o $wan -j MASQUERADE
-				COMMIT
+  #NAT
 
-				*mangle
-				:PREROUTING ACCEPT [0:0]
-				:INPUT ACCEPT [0:0]
-				:FORWARD ACCEPT [0:0]
-				:OUTPUT ACCEPT [0:0]
-				:POSTROUTING ACCEPT [0:0]
-				-A FORWARD -o $wan -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-				COMMIT
-			EOF
-		fi
-	else
-		if [ "${use_fullconenat}" = "true"  ]; then
-			iptables-restore -w <<-EOF || { echo 'Setting up NAT for $wan failed'; down; exit 1; }
-				*nat
-				:PREROUTING ACCEPT [0:0]
-				:INPUT ACCEPT [0:0]
-				:OUTPUT ACCEPT [0:0]
-				:POSTROUTING ACCEPT [0:0]
-        -A POSTROUTING -d $lan_net -o $lan -j FULLCONENAT
-				-A POSTROUTING -s $lan_net -o $wan -j FULLCONENAT
-				-A PREROUTING -i $wan -j FULLCONENAT
-				COMMIT
-			EOF
-		else
-			iptables-restore -w <<-EOF || { echo 'Setting up NAT for $wan failed'; down; exit 1; }
-				*nat
-				:PREROUTING ACCEPT [0:0]
-				:INPUT ACCEPT [0:0]
-				:OUTPUT ACCEPT [0:0]
-				:POSTROUTING ACCEPT [0:0]
-        -A POSTROUTING -d $lan_net -o $lan -j MASQUERADE
-				-A POSTROUTING -s $lan_net -o $wan -j MASQUERADE
-				COMMIT
-			EOF
-		fi
-	fi
+  if [[ "$wan" =~ "ppp" ]]; then
+    iptables -w -t mangle -A FORWARD -o $wan -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+  fi
+
+  if [ -n "${lan}" ] && [ -n "${lan_net}" ] && [ "${iptables_no_masq}" != "true" ]; then
+    if [ "${use_fullconenat}" = "true"  ]; then
+	    iptables -w -t nat -A PREROUTING -i $wan -j FULLCONENAT
+      iptables -w -t nat -A POSTROUTING -d $lan_net -o $lan -j FULLCONENAT
+      iptables -w -t nat -A POSTROUTING -s $lan_net -o $wan -j FULLCONENAT
+    else
+      iptables -w -t nat -A POSTROUTING -d $lan_net -o $lan -j MASQUERADE
+  	  iptables -w -t nat -A POSTROUTING -s $lan_net -o $wan -j MASQUERADE
+    fi
+  fi
 
 	# Filter Rules
 	# iptables
@@ -138,7 +85,7 @@ up() {
 		| ip6tables-restore -w || { echo Error: Loading filter.rules failed; down; exit 1; }
 
 	if [ -n "$cf_dest" ]; then
-		cf_redir || { echo "Error: Cloudflare redirect failed" 1>&2; down; exit 1; }
+    cf_redir || { echo "Error: Cloudflare redirect failed" 1>&2; down; exit 1; }
 	fi
 
 	start_services
