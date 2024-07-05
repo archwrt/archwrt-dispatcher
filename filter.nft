@@ -1,0 +1,27 @@
+table ip filter {
+	chain INPUT {
+		type filter hook input priority filter; policy drop;
+		iifname "lo" counter accept
+		iifname "$lan" counter accept
+		ip protocol udp counter accept
+		icmp type echo-request counter accept
+		tcp dport { $allowed_ports } counter accept
+		ct state established,related counter accept
+	}
+}
+table ip6 filter {
+	chain INPUT {
+		type filter hook input priority filter; policy drop;
+		iifname "lo" counter accept
+		iifname "$lan" counter accept
+		meta l4proto udp counter accept
+		icmpv6 type echo-request counter accept
+		icmpv6 type echo-reply counter accept
+		icmpv6 type nd-router-advert counter accept
+		icmpv6 type nd-neighbor-solicit counter accept
+		icmpv6 type nd-neighbor-advert counter accept
+		icmpv6 type nd-redirect counter accept
+		tcp dport { $allowed_ports } counter accept
+		ct state established,related counter accept
+	}
+}
