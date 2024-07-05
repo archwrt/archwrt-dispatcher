@@ -2,9 +2,9 @@
 dispacher_dir=/etc/archwrt/dispatcher
 . "$dispacher_dir/dispatcher.conf"
 
-if ! modinfo xt_FULLCONENAT &>/dev/null; then
+if ! modinfo xt_FULLCONENAT &>/dev/null && ! modinfo nft_fullcone &>/dev/null; then
 	# fallback to MASQUERADE
-	use_fullconenat = "false"
+	use_fullconenat="false"
 fi
 
 start_services() {
