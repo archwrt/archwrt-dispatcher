@@ -2,9 +2,11 @@
 dispacher_dir=/etc/archwrt/dispatcher
 . "$dispacher_dir/dispatcher.conf"
 
-if ! modinfo xt_FULLCONENAT &>/dev/null && ! modinfo nft_fullcone &>/dev/null; then
-	# fallback to MASQUERADE
-	use_fullconenat="false"
+if [ "$nat_type" = "fullcone" ]; then
+	if ! modinfo xt_FULLCONENAT &>/dev/null && ! modinfo nft_fullcone &>/dev/null; then
+		# fallback to MASQUERADE
+		nat_type="masquerade"
+	fi
 fi
 
 start_services() {
@@ -22,11 +24,18 @@ stop_services() {
 
 down() {
 	stop_services
-	if [ "$use_nftables" = "true" ]; then
-		clear_nft
-	else
-		clear_legacy
-	fi
+	case $nat_type in
+	einat) clear_einat ;;
+	fullcone | masquerade)
+		if [ "$use_nftables" = "true" ]; then
+			clear_nft
+		else
+			clear_legacy
+		fi
+		;;
+	*) ;;
+	esac
+
 }
 
 clear_legacy() {
@@ -35,6 +44,11 @@ clear_legacy() {
 
 clear_nft() {
 	nft flush ruleset
+}
+
+clear_einat() {
+	systemctl stop _archwrt-dispatcher-einat.service
+	systemctl reset-failed _archwrt-dispatcher-einat.service
 }
 
 add_rules_legacy() {
@@ -50,7 +64,7 @@ add_rules_legacy() {
 	fi
 
 	if [ -n "${lan}" ] && [ -n "${lan_net}" ] && [ "${iptables_no_masq}" != "true" ]; then
-		if [ "${use_fullconenat}" = "true" ]; then
+		if [ "${nat_type}" = "fullcone" ]; then
 			iptables -w -t nat -A PREROUTING -i $wan -j FULLCONENAT
 			iptables -w -t nat -A POSTROUTING -d $lan_net -o $lan -j FULLCONENAT
 			iptables -w -t nat -A POSTROUTING -s $lan_net -o $wan -j FULLCONENAT
@@ -96,9 +110,8 @@ add_rules_nft() {
 		nft insert rule ip nat PREROUTING ip saddr $lan_net udp dport 53 counter dnat to $dns_hijack comment "dns_redir"
 	fi
 
-
 	if [ -n "${lan}" ] && [ -n "${lan_net}" ] && [ "${iptables_no_masq}" != "true" ]; then
-		if [ "${use_fullconenat}" = "true" ]; then
+		if [ "${nat_type}" = "fullcone" ]; then
 			nft add rule ip nat PREROUTING iifname $wan counter fullcone
 			nft add rule ip nat POSTROUTING oifname $lan ip daddr $lan_net counter fullcone
 			nft add rule ip nat POSTROUTING oifname $wan ip saddr $lan_net counter fullcone
@@ -118,6 +131,25 @@ add_rules_nft() {
 
 }
 
+add_rules_einat() {
+	systemd-run -u _archwrt-dispatcher-einat.service \
+		-p 'AmbientCapabilities=CAP_SYS_ADMIN CAP_NET_ADMIN' \
+		-p 'CapabilityBoundingSet=CAP_SYS_ADMIN CAP_NET_ADMIN' \
+		-p 'DynamicUser=yes' \
+		-p 'User=einat' \
+		-p 'NoNewPrivileges=yes' \
+		-p 'ProtectSystem=strict' \
+		-p 'ProtectHome=yes' \
+		-p 'ConfigurationDirectory=einat' \
+		-p 'PrivateTmp=yes' \
+		-p 'ProtectKernelTunables=yes' \
+		-p 'ProtectKernelModules=yes' \
+		-p 'ProtectControlGroups=yes' \
+		-p 'LockPersonality=yes' \
+		-p 'RestrictRealtime=yes' \
+		einat --ifname $wan --hairpin-if lo,$lan &>/dev/null
+}
+
 up() {
 	case $1 in
 	default)
@@ -135,11 +167,17 @@ up() {
 		;;
 	esac
 
-	if [ "$use_nftables" = "true" ]; then
-		add_rules_nft
-	else
-		add_rules_legacy
-	fi
+	case $nat_type in
+	einat) add_rules_einat ;;
+	fullcone | masquerade)
+		if [ "$use_nftables" = "true" ]; then
+			add_rules_nft
+		else
+			add_rules_legacy
+		fi
+		;;
+	*) ;;
+	esac
 
 	start_services
 }
