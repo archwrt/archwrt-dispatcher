@@ -49,6 +49,11 @@ clear_nft() {
 clear_einat() {
 	systemctl stop _archwrt-dispatcher-einat.service
 	systemctl reset-failed _archwrt-dispatcher-einat.service
+	if [ "$use_nftables" = "true" ]; then
+		clear_nft
+	else
+		clear_legacy
+	fi
 }
 
 add_rules_legacy() {
@@ -57,20 +62,22 @@ add_rules_legacy() {
 		iptables -w -t nat -I PREROUTING -s $lan_net -p udp -m udp --dport 53 -m comment --comment dns_redir -j DNAT --to-destination $dns_hijack
 	fi
 
-	#NAT
 	if [[ "$wan" =~ "ppp" ]]; then
 		iptables -w -t mangle -A FORWARD -o $wan -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 		ip6tables -w -t mangle -A FORWARD -o $wan -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 	fi
 
-	if [ -n "${lan}" ] && [ -n "${lan_net}" ] && [ "${iptables_no_masq}" != "true" ]; then
-		if [ "${nat_type}" = "fullcone" ]; then
-			iptables -w -t nat -A PREROUTING -i $wan -j FULLCONENAT
-			iptables -w -t nat -A POSTROUTING -d $lan_net -o $lan -j FULLCONENAT
-			iptables -w -t nat -A POSTROUTING -s $lan_net -o $wan -j FULLCONENAT
-		else
-			iptables -w -t nat -A POSTROUTING -d $lan_net -o $lan -j MASQUERADE
-			iptables -w -t nat -A POSTROUTING -s $lan_net -o $wan -j MASQUERADE
+	if [ "${nat_type}" != "einat" ]; then
+		#NAT
+		if [ -n "${lan}" ] && [ -n "${lan_net}" ] && [ "${iptables_no_masq}" != "true" ]; then
+			if [ "${nat_type}" = "fullcone" ]; then
+				iptables -w -t nat -A PREROUTING -i $wan -j FULLCONENAT
+				iptables -w -t nat -A POSTROUTING -d $lan_net -o $lan -j FULLCONENAT
+				iptables -w -t nat -A POSTROUTING -s $lan_net -o $wan -j FULLCONENAT
+			else
+				iptables -w -t nat -A POSTROUTING -d $lan_net -o $lan -j MASQUERADE
+				iptables -w -t nat -A POSTROUTING -s $lan_net -o $wan -j MASQUERADE
+			fi
 		fi
 	fi
 
@@ -94,7 +101,6 @@ add_rules_legacy() {
 
 add_rules_nft() {
 
-	#NAT
 	if [[ "$wan" =~ "ppp" ]]; then
 		nft add table inet mangle
 		nft add chain inet mangle FORWARD '{ type filter hook forward priority -150; policy accept; }'
@@ -110,14 +116,16 @@ add_rules_nft() {
 		nft insert rule ip nat PREROUTING ip saddr $lan_net udp dport 53 counter dnat to $dns_hijack comment "dns_redir"
 	fi
 
-	if [ -n "${lan}" ] && [ -n "${lan_net}" ] && [ "${iptables_no_masq}" != "true" ]; then
-		if [ "${nat_type}" = "fullcone" ]; then
-			nft add rule ip nat PREROUTING iifname $wan counter fullcone
-			nft add rule ip nat POSTROUTING oifname $lan ip daddr $lan_net counter fullcone
-			nft add rule ip nat POSTROUTING oifname $wan ip saddr $lan_net counter fullcone
-		else
-			nft add rule ip nat POSTROUTING oifname $lan ip daddr $lan_net counter masquerade
-			nft add rule ip nat POSTROUTING oifname $wan ip saddr $lan_net counter masquerade
+	if [ "${nat_type}" != "einat" ]; then
+		if [ -n "${lan}" ] && [ -n "${lan_net}" ] && [ "${iptables_no_masq}" != "true" ]; then
+			if [ "${nat_type}" = "fullcone" ]; then
+				nft add rule ip nat PREROUTING iifname $wan counter fullcone
+				nft add rule ip nat POSTROUTING oifname $lan ip daddr $lan_net counter fullcone
+				nft add rule ip nat POSTROUTING oifname $wan ip saddr $lan_net counter fullcone
+			else
+				nft add rule ip nat POSTROUTING oifname $lan ip daddr $lan_net counter masquerade
+				nft add rule ip nat POSTROUTING oifname $wan ip saddr $lan_net counter masquerade
+			fi
 		fi
 	fi
 
@@ -148,6 +156,12 @@ add_rules_einat() {
 		-p 'LockPersonality=yes' \
 		-p 'RestrictRealtime=yes' \
 		einat --ifname $wan --hairpin-if lo,$lan &>/dev/null
+
+	if [ "$use_nftables" = "true" ]; then
+		add_rules_nft
+	else
+		add_rules_legacy
+	fi
 }
 
 up() {
