@@ -65,9 +65,9 @@ systemctl stop "archwrt-dispatcher@${IFNAME}.service"
 See `nat_type` in `dispatcher.conf`
 Currently support:
 
-- iptables, iptables-fullconenat
-- nftables, nftables-fullcone
-- einat-ebpf
+- iptables, [iptables-fullconenat](https://github.com/Chion82/netfilter-full-cone-nat)
+- nftables, [nftables-fullcone](https://github.com/fullcone-nat-nftables)
+- [einat-ebpf](https://github.com/EHfive/einat-ebpf)
 
 ### Managing Services
 
